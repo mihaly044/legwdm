@@ -7,7 +7,7 @@ NTSTATUS LgCopyMemory(
 NTSTATUS LgGetMemoryRegions(
 	IN PLGGETMEMORYREGION_REQ pParam,
 	PVOID buffer,
-	PUINT32 count
+	PSIZE_T count
 );
 
 NTSTATUS LgQueryMemImageName(

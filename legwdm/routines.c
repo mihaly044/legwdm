@@ -41,11 +41,12 @@ NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 	return status;
 }
 
-NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUINT32 count)
+NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PSIZE_T count)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 
 	ULONG_PTR base = 0;
+	SIZE_T retsize = 0;
 
 	MEMORY_BASIC_INFORMATION mbi;
 	PEPROCESS pProcess;
@@ -65,7 +66,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 
 		while (base < (ULONG_PTR)MM_HIGHEST_USER_ADDRESS - PAGE_SIZE - 1)
 		{
-			status = ZwQueryVirtualMemory(hProcess, (PULONG_PTR)base, MemoryBasicInformation, &mbi, sizeof(mbi), NULL);
+			status = ZwQueryVirtualMemory(hProcess, (PULONG_PTR)base, MemoryBasicInformation, &mbi, sizeof(MEMORY_BASIC_INFORMATION), &retsize);
 
 			if (NT_SUCCESS(status))
 			{
@@ -93,8 +94,8 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 					goto Detach;
 				}
 
-				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + *count * sizeof(MEMORY_BASIC_INFORMATION)) , &mbi, sizeof(mbi));
-				*count = *count + 1;
+				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + (ULONG_PTR)(*count) * sizeof(MEMORY_BASIC_INFORMATION)) , &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+				(*count) = (*count) + 1;
 
 				if (mbi.RegionSize > 0)
 					LgAdjustMemoryPointerByOffset(&base, mbi.RegionSize);

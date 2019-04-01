@@ -3,8 +3,11 @@
 #include "imports.h"
 
 #define PAGE_SIZE 0x1000
-#define MM_POOL_TAG 'wdM'
-#define MM_POOL_TAG1 'mndW'
+
+// Pool tags should be not more than 4 chars
+// @seealso https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/wdm/nf-wdm-exallocatepoolwithtag
+#define MM_POOL_TAG '1baT'
+#define MM_POOL_TAG1 '2gaT'
 
 typedef struct _OBJECT_DIRECTORY_INFORMATION
 {

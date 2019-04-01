@@ -79,21 +79,30 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 			}
 			else
 			{
-				UINT32 count = 0;
+				SIZE_T count = 0;
 				PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
-				status = LgGetMemoryRegions(pParam1, buf, &count);
 
-				if (count > 0)
+				if (buf == NULL )
 				{
-					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
-					processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(MEMORY_BASIC_INFORMATION) * count;
+					status = STATUS_INSUFFICIENT_RESOURCES;
+					processedIo = sizeof(LGGETMEMORYREGION_REQ);
 				}
 				else
 				{
-					processedIo = sizeof(LGGETMEMORYREGION_REQ);
-				}
+					status = LgGetMemoryRegions(pParam1, buf, &count);
 
-				ExFreePoolWithTag(buf, MM_POOL_TAG);
+					if (count > 0)
+					{
+						RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
+						processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(MEMORY_BASIC_INFORMATION) * count;
+					}
+					else
+					{
+						processedIo = sizeof(LGGETMEMORYREGION_REQ);
+					}
+
+					ExFreePoolWithTag(buf, MM_POOL_TAG);
+				}
 			}
 		}
 		break;
@@ -102,7 +111,6 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		//DbgPrintEx causes PAGE_FAULT if called heavily. Have no idea why. Probably it eats up the stack?
 		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
 		Irp->AssociatedIrp.SystemBuffer;
-		
 		PLGQUERYMEMIMAGENAME_REQ pParam2 = (PLGQUERYMEMIMAGENAME_REQ)Irp->AssociatedIrp.SystemBuffer;
 
 		if (!pParam2 || pParam2->pid == 0)
@@ -114,16 +122,25 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		{
 			SIZE_T count1 = 0;
 			PVOID buf1 = ExAllocatePoolWithTag(PagedPool, 1024 * (sizeof(WCHAR)), MM_POOL_TAG1);
-			status = LgQueryMemImageName(pParam2, buf1, &count1);
 
-			if (count1 > 0)
+			if (buf1 == NULL)
 			{
-				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf1, sizeof(WCHAR) * count1);
-				processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ) + sizeof(WCHAR) * (ULONG)count1 + 1;
+				status = STATUS_INSUFFICIENT_RESOURCES;
+				processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ);
 			}
 			else
 			{
-				processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ);
+				status = LgQueryMemImageName(pParam2, buf1, &count1);
+
+				if (count1 > 0)
+				{
+					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf1, sizeof(WCHAR) * count1);
+					processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ) + sizeof(WCHAR) * (ULONG)count1 + 1;
+				}
+				else
+				{
+					processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ);
+				}
 			}
 
 			ExFreePoolWithTag(buf1, MM_POOL_TAG1);

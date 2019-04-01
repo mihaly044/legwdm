@@ -5,7 +5,7 @@
 #define MAX_PATH 260
 #endif
 
-#define MAX_LGMEMORY_REGIONS 0x1000
+#define MAX_LGMEMORY_REGIONS 512
 
 typedef struct _class_LGCOPYMEMORY_REQ
 {
