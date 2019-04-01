@@ -2,6 +2,7 @@
 #if !defined(_CONSOLE) && !defined USERMODE
 #include <ntdef.h>
 #include <ntifs.h>
+#define MAX_PATH 260
 #endif
 
 #define MAX_LGMEMORY_REGIONS 0x1000
@@ -22,10 +23,10 @@ typedef struct _class_LGGETMEMORYREGION_REQ
 
 typedef struct _class_MEMORY_SECTION_NAME {
 	UNICODE_STRING Name;
-	WCHAR     Buffer[2048];
+	WCHAR     Buffer[MAX_PATH];
 } MEMORY_SECTION_NAME, *PMEMORY_SECTION_NAME;
 
 typedef struct _class_LGMEMORY_REGION {
-	MEMORY_SECTION_NAME section;
+	WCHAR     Name[MAX_PATH];
 	MEMORY_BASIC_INFORMATION mbi;
 } LGMEMORY_REGION, *PLGMEMORY_REGION;

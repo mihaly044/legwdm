@@ -138,12 +138,11 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	DWORD bytesIo = 0;
 
-
 	// This the maximum amount of results we can store
 	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 	// the driver will complain about possibly not having enough memory to
 	// copy the results
-	DWORD max =  MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
+	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(LGMEMORY_REGION);
 	auto result = new BYTE[max];
 
 	// This is the request we are going to pass to our driver
@@ -156,18 +155,21 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 		max, &bytesIo, nullptr))
 	{
 		bytesIo -= sizeof(request);
-		wcout << L"OK " << "IO = " << bytesIo << endl;
-		wcout << "mbi * " << bytesIo / sizeof(MEMORY_BASIC_INFORMATION) << endl;
 
-		MEMORY_BASIC_INFORMATION mbi;
+		LGMEMORY_REGION reg;
 		int index = 0;
 		while (bytesIo > 0)
 		{
-			memcpy(&mbi, result + index * sizeof(mbi), sizeof(mbi));
+			memcpy(&reg, result + index * sizeof(reg), sizeof(reg));
 			index++;
 
-			wcout << "Base address = " << mbi.BaseAddress << " RegionSize = " << mbi.RegionSize << endl;
-			bytesIo -= sizeof(mbi);
+			wcout << reg.mbi.BaseAddress << "/" << reg.mbi.RegionSize << " Image = ";
+			if (reg.mbi.Type == MEM_IMAGE)
+				wcout << reg.Name << endl;
+			else
+				wcout << "None" << endl;
+
+			bytesIo -= sizeof(reg);
 		}
 	}
 	else
