@@ -137,7 +137,6 @@ BOOLEAN NtPathToDosPathW(IN WCHAR* wzFullNtPath, OUT WCHAR* wzFullDosPath)
 {
 	WCHAR wzDosDevice[4] = { 0 };
 	WCHAR wzNtDevice[64] = { 0 };
-	WCHAR *RetStr = NULL;
 	size_t NtDeviceLen = 0;
 	short i = 0;
 	if (!wzFullNtPath || !wzFullDosPath)

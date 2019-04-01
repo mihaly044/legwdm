@@ -72,7 +72,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		}
 		else
 		{
-			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(LGMEMORY_REGION))
+			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
 			{
 				status = STATUS_NO_MEMORY;
 				processedIo = sizeof(LGGETMEMORYREGION_REQ);
@@ -80,13 +80,13 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 			else
 			{
 				UINT32 count = 0;
-				PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(LGMEMORY_REGION)), MM_POOL_TAG);
+				PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
 				status = LgGetMemoryRegions(pParam1, buf, &count);
 
 				if (count > 0)
 				{
-					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(LGMEMORY_REGION) * count);
-					processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(LGMEMORY_REGION) * count;
+					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
+					processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(MEMORY_BASIC_INFORMATION) * count;
 				}
 				else
 				{
@@ -96,7 +96,35 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 				ExFreePoolWithTag(buf, MM_POOL_TAG);
 			}
 		}
+		break;
 
+	case IOCTL_LGQUERYMEMIMAGENAME:
+		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
+		PLGQUERYMEMIMAGENAME_REQ pParam2 = (PLGQUERYMEMIMAGENAME_REQ)Irp->AssociatedIrp.SystemBuffer;
+
+		if (!pParam2 || pParam2->pid == 0)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ);
+		}
+		else
+		{
+			SIZE_T count = 0;
+			PVOID buf = ExAllocatePoolWithTag(PagedPool, 1024 * (sizeof(WCHAR)), MM_POOL_TAG);
+			status = LgQueryMemImageName(pParam2, buf, &count);
+
+			if (count > 0)
+			{
+				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
+				processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(WCHAR) * (ULONG)count + 1;
+			}
+			else
+			{
+				processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ);
+			}
+
+			ExFreePoolWithTag(buf, MM_POOL_TAG);
+		}
 		break;
 	default:
 		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d Invalid control code: 0x%08x\r\n", __FILE__, __LINE__, 

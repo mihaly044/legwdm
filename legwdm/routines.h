@@ -9,3 +9,9 @@ NTSTATUS LgGetMemoryRegions(
 	PVOID buffer,
 	PUINT32 count
 );
+
+NTSTATUS LgQueryMemImageName(
+	IN PLGQUERYMEMIMAGENAME_REQ pParam,
+	PVOID buffer,
+	PSIZE_T count
+);

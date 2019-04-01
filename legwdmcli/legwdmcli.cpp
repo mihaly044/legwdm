@@ -138,11 +138,14 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	DWORD bytesIo = 0;
 
+	DWORD dwImIo = 0;
+	WCHAR* im;
+
 	// This the maximum amount of results we can store
 	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 	// the driver will complain about possibly not having enough memory to
 	// copy the results
-	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(LGMEMORY_REGION);
+	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 	auto result = new BYTE[max];
 
 	// This is the request we are going to pass to our driver
@@ -156,20 +159,35 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 	{
 		bytesIo -= sizeof(request);
 
-		LGMEMORY_REGION reg;
+		MEMORY_BASIC_INFORMATION mbi;
 		int index = 0;
 		while (bytesIo > 0)
 		{
-			memcpy(&reg, result + index * sizeof(reg), sizeof(reg));
+			memcpy(&mbi, result + index * sizeof(mbi), sizeof(mbi));
 			index++;
 
-			wcout << reg.mbi.BaseAddress << "/" << reg.mbi.RegionSize << " Image = ";
-			if (reg.mbi.Type == MEM_IMAGE)
-				wcout << reg.Name << endl;
-			else
-				wcout << "None" << endl;
+			if (mbi.Type == MEM_IMAGE)
+			{
+				im = new WCHAR[1024];
 
-			bytesIo -= sizeof(reg);
+				LGQUERYMEMIMAGENAME_REQ qreq = {
+					pid,
+					mbi.BaseAddress
+				};
+
+				DeviceIoControl(hDev, IOCTL_LGQUERYMEMIMAGENAME, &qreq, sizeof(qreq), im,
+					1024 * sizeof(WCHAR) + 1, &dwImIo, nullptr);
+
+				wcout << L"Base=" <<mbi.BaseAddress << L" Size=" << mbi.RegionSize << " Image=" << im << endl;
+
+				delete[] im;
+			}
+			else
+			{
+				wcout << L"Base=" << mbi.BaseAddress << L" Size=" << mbi.RegionSize << endl;
+			}
+
+			bytesIo -= sizeof(mbi);
 		}
 	}
 	else

@@ -53,7 +53,8 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 	KAPC_STATE apc;
 	base = (ULONG_PTR)MM_LOWEST_USER_ADDRESS;
 
-	if (!NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess)))
+	status = PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess);
+	if (!NT_SUCCESS(status))
 	{
 		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 	}
@@ -92,18 +93,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 					goto Detach;
 				}
 
-				LGMEMORY_REGION reg;
-				RtlCopyMemory(&reg.mbi, &mbi, sizeof(mbi));
-
-				
-				if (mbi.Type == 0x1000000)
-				{
-					MEMORY_SECTION_NAME msn = { 0 };
-					if (NT_SUCCESS(ZwQueryVirtualMemory(hProcess, (PULONG_PTR)base, 2, &msn, sizeof(MEMORY_SECTION_NAME), NULL)))
-						NtPathToDosPathW(msn.Buffer, reg.Name);
-				}
-
-				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + *count * sizeof(LGMEMORY_REGION)) , &reg, sizeof(reg));
+				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + *count * sizeof(MEMORY_BASIC_INFORMATION)) , &mbi, sizeof(mbi));
 				*count = *count + 1;
 
 				if (mbi.RegionSize > 0)
@@ -119,6 +109,44 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 		}
 
 		Detach:
+		KeUnstackDetachProcess(&apc);
+	}
+
+	if (pProcess)
+		ObDereferenceObject(pProcess);
+
+	return status;
+}
+
+NTSTATUS LgQueryMemImageName(IN PLGQUERYMEMIMAGENAME_REQ pParam, PVOID buffer, PSIZE_T count)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PEPROCESS pProcess;
+	HANDLE hProcess;
+	KAPC_STATE apc;
+
+	status = PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess);
+	if (!NT_SUCCESS(status))
+	{
+		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+	}
+	else
+	{
+		KeStackAttachProcess(pProcess, &apc);
+		hProcess = ZwCurrentProcess();
+
+		MEMORY_SECTION_NAME msn = { 0 };
+		status = ZwQueryVirtualMemory(hProcess, (PULONG_PTR)pParam->base, 2, &msn, sizeof(MEMORY_SECTION_NAME), NULL);
+		if (NT_SUCCESS(status))
+		{
+			NtPathToDosPathW(msn.Buffer, buffer);
+			*count = wcsnlen_s(buffer, MAX_PATH);
+		}
+		else
+		{
+			DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+		}
+
 		KeUnstackDetachProcess(&apc);
 	}
 
