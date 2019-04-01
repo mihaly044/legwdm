@@ -49,10 +49,16 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGCOPYMEMORY was called\r\n", __FILE__, __LINE__);
 		
 		PLGCOPYMEMORY_REQ pParam = (PLGCOPYMEMORY_REQ)Irp->AssociatedIrp.SystemBuffer;
-		if (!pParam || pParam->pid == 0 ||
-			IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
+		if (!pParam || pParam->pid == 0)
 		{
-			status = STATUS_INVALID_PARAMETER;
+			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
+			{
+				status = STATUS_INFO_LENGTH_MISMATCH;
+			}
+			else
+			{
+				status = STATUS_INVALID_PARAMETER;
+			}
 		}
 		else
 		{
