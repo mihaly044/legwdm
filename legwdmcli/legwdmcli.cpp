@@ -84,7 +84,7 @@ void test_memory_read(HANDLE hDev, DWORD pid)
 	// We will copy the previous variable's value into this
 	DWORD read = 0;
 
-	// This replace represents how many bytes were written to/read from our driver
+	// This variable represents how many bytes were written to/read from our driver
 	DWORD bytesIo = 0;
 
 	// This is the request we are going to pass to our driver
@@ -138,8 +138,12 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	DWORD bytesIo = 0;
 
-	DWORD max =  MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 
+	// This the maximum amount of results we can store
+	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
+	// the driver will complain about possibly not having enough memory to
+	// copy the results
+	DWORD max =  MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 	auto result = new BYTE[max];
 
 	// This is the request we are going to pass to our driver
