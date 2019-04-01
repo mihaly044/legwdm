@@ -99,7 +99,9 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		break;
 
 	case IOCTL_LGQUERYMEMIMAGENAME:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
+		Irp->AssociatedIrp.SystemBuffer;
+		
 		PLGQUERYMEMIMAGENAME_REQ pParam2 = (PLGQUERYMEMIMAGENAME_REQ)Irp->AssociatedIrp.SystemBuffer;
 
 		if (!pParam2 || pParam2->pid == 0)
@@ -109,21 +111,21 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		}
 		else
 		{
-			SIZE_T count = 0;
-			PVOID buf = ExAllocatePoolWithTag(PagedPool, 1024 * (sizeof(WCHAR)), MM_POOL_TAG);
-			status = LgQueryMemImageName(pParam2, buf, &count);
+			SIZE_T count1 = 0;
+			PVOID buf1 = ExAllocatePoolWithTag(PagedPool, 1024 * (sizeof(WCHAR)), MM_POOL_TAG1);
+			status = LgQueryMemImageName(pParam2, buf1, &count1);
 
-			if (count > 0)
+			if (count1 > 0)
 			{
-				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
-				processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(WCHAR) * (ULONG)count + 1;
+				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf1, sizeof(WCHAR) * count1);
+				processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ) + sizeof(WCHAR) * (ULONG)count1 + 1;
 			}
 			else
 			{
 				processedIo = sizeof(LGQUERYMEMIMAGENAME_REQ);
 			}
 
-			ExFreePoolWithTag(buf, MM_POOL_TAG);
+			ExFreePoolWithTag(buf1, MM_POOL_TAG1);
 		}
 		break;
 	default:

@@ -4,6 +4,7 @@
 
 #define PAGE_SIZE 0x1000
 #define MM_POOL_TAG 'enoB'
+#define MM_POOL_TAG1 'bnoB'
 
 typedef struct _OBJECT_DIRECTORY_INFORMATION
 {
