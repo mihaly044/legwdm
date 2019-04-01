@@ -92,18 +92,17 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 					goto Detach;
 				}
 
-				LGMEMORY_REGION reg;
-				RtlCopyMemory(&reg.mbi, &mbi, sizeof(mbi));
+				//LGMEMORY_REGION reg;
+				//RtlCopyMemory(&reg.mbi, &mbi, sizeof(mbi));
 
-				
-				if (mbi.Type == 0x1000000)
+				/*if (mbi.Type == 0x1000000)
 				{
 					MEMORY_SECTION_NAME msn = { 0 };
 					if (NT_SUCCESS(ZwQueryVirtualMemory(hProcess, (PULONG_PTR)base, 2, &msn, sizeof(MEMORY_SECTION_NAME), NULL)))
 						NtPathToDosPathW(msn.Buffer, reg.Name);
-				}
+				}*/
 
-				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + *count * sizeof(LGMEMORY_REGION)) , &reg, sizeof(reg));
+				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + *count * sizeof(MEMORY_BASIC_INFORMATION)) , &mbi, sizeof(mbi));
 				*count = *count + 1;
 
 				if (mbi.RegionSize > 0)

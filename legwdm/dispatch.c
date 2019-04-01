@@ -72,7 +72,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		}
 		else
 		{
-			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(LGMEMORY_REGION))
+			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
 			{
 				status = STATUS_NO_MEMORY;
 				processedIo = sizeof(LGGETMEMORYREGION_REQ);
@@ -80,13 +80,13 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 			else
 			{
 				UINT32 count = 0;
-				PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(LGMEMORY_REGION)), MM_POOL_TAG);
+				PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
 				status = LgGetMemoryRegions(pParam1, buf, &count);
 
 				if (count > 0)
 				{
-					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(LGMEMORY_REGION) * count);
-					processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(LGMEMORY_REGION) * count;
+					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
+					processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(MEMORY_BASIC_INFORMATION) * count;
 				}
 				else
 				{

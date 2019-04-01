@@ -64,7 +64,7 @@ int wmain(int argc, wchar_t** argv)
 	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 	// the driver will complain about possibly not having enough memory to
 	// copy the results
-	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(LGMEMORY_REGION);
+	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
 	auto result = new BYTE[max];
 
 	// This is the request we are going to pass to our driver
@@ -85,33 +85,33 @@ int wmain(int argc, wchar_t** argv)
 
 		BYTE* copy;
 		bytesIo -= sizeof(request);
-		LGMEMORY_REGION reg;
+		MEMORY_BASIC_INFORMATION mbi;
 		int index = 0;
 		while (bytesIo > 0)
 		{
-			memcpy(&reg, result + index * sizeof(reg), sizeof(reg));
+			memcpy(&mbi, result + index * sizeof(mbi), sizeof(mbi));
 			index++;
-			bytesIo -= sizeof(reg);
+			bytesIo -= sizeof(mbi);
 
-			if (reg.mbi.Type == MEM_IMAGE)
-				continue;
+			//if (mbi.Type == MEM_IMAGE)
+			//	continue;
 
-			copy = new BYTE[reg.mbi.RegionSize];
+			copy = new BYTE[mbi.RegionSize];
 
 			LGCOPYMEMORY_REQ cpyreq
 			{
 				FALSE,
 				pid,
-				reg.mbi.BaseAddress,
+				mbi.BaseAddress,
 				copy,
-				reg.mbi.RegionSize
+				mbi.RegionSize
 			};
 
 			if (DeviceIoControl(hDev, IOCTL_LGCOPYMEMORY, &cpyreq, sizeof(cpyreq), nullptr,
 				0, &dw, nullptr))
 			{
-				wcout << L"Copied " << reg.mbi.RegionSize << L" bytes from " << reg.mbi.BaseAddress << endl;
-				fwrite(copy, 1, reg.mbi.RegionSize, fp);
+				wcout << L"Copied " << mbi.RegionSize << L" bytes from " << mbi.BaseAddress << endl;
+				fwrite(copy, 1, mbi.RegionSize, fp);
 			}
 
 			delete[] copy;
