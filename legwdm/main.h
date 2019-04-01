@@ -1,6 +1,5 @@
 #pragma once
-#include <wdm.h>
-
+#include "types.h"
 NTSTATUS DriverEntry(
 	IN PDRIVER_OBJECT DriverObject,
 	IN PUNICODE_STRING RegistryPath

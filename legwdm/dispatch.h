@@ -1,6 +1,5 @@
 #pragma once
-#include <wdm.h>
-
+#include "types.h"
 NTSTATUS DispatchMajorFunction(
 	IN PDEVICE_OBJECT DeviceObject,
 	IN PIRP Irp

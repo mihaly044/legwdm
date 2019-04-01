@@ -1,8 +1,6 @@
-#pragma once
-
 #include "common.h"
-#include "main.h"
 #include "dispatch.h"
+#include "main.h"
 
 UNICODE_STRING g_DevName;
 UNICODE_STRING g_SymLink;
@@ -40,7 +38,6 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 	DriverObject->DriverUnload = DriverUnload;
 
 	DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Load successfull\r\n");
-
 	return status;
 }
 
