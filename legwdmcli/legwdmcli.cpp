@@ -138,7 +138,9 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	DWORD bytesIo = 0;
 
-	auto result = new BYTE[MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION)];
+	DWORD max =  MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
+
+	auto result = new BYTE[max];
 
 	// This is the request we are going to pass to our driver
 	LGGETMEMORYREGION_REQ request = {
@@ -147,7 +149,7 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	// Talk to the driver
 	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), result,
-		MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION), &bytesIo, nullptr))
+		max, &bytesIo, nullptr))
 	{
 		bytesIo -= sizeof(request);
 		wcout << L"OK " << "IO = " << bytesIo << endl;

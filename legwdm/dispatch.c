@@ -51,18 +51,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		PLGCOPYMEMORY_REQ pParam = (PLGCOPYMEMORY_REQ)Irp->AssociatedIrp.SystemBuffer;
 		if (!pParam || pParam->pid == 0)
 		{
-			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
-			{
-				status = STATUS_INFO_LENGTH_MISMATCH;
-			}
-			else
-			{
-				status = STATUS_INVALID_PARAMETER;
-			}
-		}
-		else
-		{
-			status = LgCopyMemory(pParam);
+			status = STATUS_INVALID_PARAMETER;
 		}
 		
 		processedIo = sizeof(PLGCOPYMEMORY_REQ);
@@ -79,21 +68,29 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		}
 		else
 		{
-			UINT32 count = 0;
-			PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
-			status = LgGetMemoryRegions(pParam1, buf, &count);
-
-			if (count > 0)
+			if (IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
 			{
-				RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
-				processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(MEMORY_BASIC_INFORMATION) * count;
+				status = STATUS_NO_MEMORY;
+				processedIo = sizeof(LGGETMEMORYREGION_REQ);
 			}
 			else
 			{
-				processedIo = sizeof(LGGETMEMORYREGION_REQ);
-			}
+				UINT32 count = 0;
+				PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
+				status = LgGetMemoryRegions(pParam1, buf, &count);
 
-			ExFreePoolWithTag(buf, MM_POOL_TAG);
+				if (count > 0)
+				{
+					RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, buf, sizeof(MEMORY_BASIC_INFORMATION) * count);
+					processedIo = sizeof(LGGETMEMORYREGION_REQ) + sizeof(MEMORY_BASIC_INFORMATION) * count;
+				}
+				else
+				{
+					processedIo = sizeof(LGGETMEMORYREGION_REQ);
+				}
+
+				ExFreePoolWithTag(buf, MM_POOL_TAG);
+			}
 		}
 
 		break;
