@@ -2,7 +2,6 @@
 #include "imports.h"
 #include "internal.h"
 
-
 NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -69,7 +68,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 
 			if (NT_SUCCESS(status))
 			{
-				if (mbi.Type != 0x1000000 || (ULONG_PTR)mbi.AllocationBase != base)
+				if (/*mbi.Type != 0x1000000 ||*/ (ULONG_PTR)mbi.AllocationBase != base)
 				{
 					if (mbi.RegionSize > 0)
 						LgAdjustMemoryPointerByOffset(&base, mbi.RegionSize);
@@ -78,8 +77,6 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 
 					continue;
 				}
-
-				// RtlCopyMemory( (PVOID)( (ULONG_PTR)buffer + (ULONG_PTR)(count * sizeof(MEMORY_BASIC_INFORMATION)) ) , &mbi, sizeof(mbi));
 			}
 			else
 			{
@@ -92,8 +89,6 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 
 			if (NT_SUCCESS(status))
 			{
-				//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "BaseAddress:%08X ModuleName: %wZ \r\n", (ULONG_PTR)mbi.AllocationBase, msn.Name);
-
 				if (*count > MAX_LGMEMORY_REGIONS)
 				{
 					*count = *count - 1;
