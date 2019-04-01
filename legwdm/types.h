@@ -4,6 +4,8 @@
 #include <ntifs.h>
 #endif
 
+#define MAX_LGMEMORY_REGIONS 0x1000
+
 typedef struct _class_LGCOPYMEMORY_REQ
 {
 	BOOLEAN write;

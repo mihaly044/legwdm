@@ -94,6 +94,12 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PUIN
 			{
 				//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "BaseAddress:%08X ModuleName: %wZ \r\n", (ULONG_PTR)mbi.AllocationBase, msn.Name);
 
+				if (*count > MAX_LGMEMORY_REGIONS)
+				{
+					*count = *count - 1;
+					goto Detach;
+				}
+
 				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + *count * sizeof(MEMORY_BASIC_INFORMATION)) , &mbi, sizeof(mbi));
 				*count = *count + 1;
 

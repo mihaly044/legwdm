@@ -49,7 +49,8 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGCOPYMEMORY was called\r\n", __FILE__, __LINE__);
 		
 		PLGCOPYMEMORY_REQ pParam = (PLGCOPYMEMORY_REQ)Irp->AssociatedIrp.SystemBuffer;
-		if (!pParam || pParam->pid == 0)
+		if (!pParam || pParam->pid == 0 ||
+			IoStackLocation->Parameters.DeviceIoControl.OutputBufferLength != MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION))
 		{
 			status = STATUS_INVALID_PARAMETER;
 		}
@@ -63,9 +64,9 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 
 	case IOCTL_LGENUMMEMORYREGIONS:
 		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGENUMMEMORYREGIONS was called\r\n", __FILE__, __LINE__);
-		PLGGETMEMORYREGION_REQ pParam = (PLGGETMEMORYREGION_REQ)Irp->AssociatedIrp.SystemBuffer;
+		PLGGETMEMORYREGION_REQ pParam1 = (PLGGETMEMORYREGION_REQ)Irp->AssociatedIrp.SystemBuffer;
 
-		if (!pParam || pParam->pid == 0)
+		if (!pParam1 || pParam1->pid == 0)
 		{
 			status = STATUS_INVALID_PARAMETER;
 			processedIo = sizeof(LGGETMEMORYREGION_REQ);
@@ -73,8 +74,8 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		else
 		{
 			UINT32 count = 0;
-			PVOID buf = ExAllocatePoolWithTag(PagedPool, 1024 * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
-			status = LgGetMemoryRegions(pParam, buf, &count);
+			PVOID buf = ExAllocatePoolWithTag(PagedPool, MAX_LGMEMORY_REGIONS * (sizeof(MEMORY_BASIC_INFORMATION)), MM_POOL_TAG);
+			status = LgGetMemoryRegions(pParam1, buf, &count);
 
 			if (count > 0)
 			{

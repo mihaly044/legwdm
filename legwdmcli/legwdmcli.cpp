@@ -138,7 +138,7 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	DWORD bytesIo = 0;
 
-	auto result = new BYTE[1024 * sizeof(MEMORY_BASIC_INFORMATION)];
+	auto result = new BYTE[MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION)];
 
 	// This is the request we are going to pass to our driver
 	LGGETMEMORYREGION_REQ request = {
@@ -147,11 +147,11 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 
 	// Talk to the driver
 	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), result,
-		1024 * sizeof(MEMORY_BASIC_INFORMATION), &bytesIo, nullptr))
+		MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION), &bytesIo, nullptr))
 	{
 		bytesIo -= sizeof(request);
 		wcout << L"OK " << "IO = " << bytesIo << endl;
-		wcout << "Total = " << bytesIo / sizeof(MEMORY_BASIC_INFORMATION) << endl;
+		wcout << "mbi * " << bytesIo / sizeof(MEMORY_BASIC_INFORMATION) << endl;
 
 		MEMORY_BASIC_INFORMATION mbi;
 		int index = 0;
@@ -196,9 +196,9 @@ int wmain(int argc, wchar_t** argv)
 		return 0;
 	}
 
-	test_memory_write(hDev, pid);
-	test_memory_read(hDev, pid);
-	test_invalid_ctl(hDev);
+	//test_memory_write(hDev, pid);
+	//test_memory_read(hDev, pid);
+	//test_invalid_ctl(hDev);
 
 	test_enum_regions(hDev, GetProcessId(argv[1]));
 
