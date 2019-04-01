@@ -37,31 +37,6 @@ DWORD GetProcessId(LPCWSTR ProcessName)
 	return 0;
 }
 
-size_t to_narrow(const wchar_t * src, char * dest, size_t dest_len) {
-	size_t i;
-	wchar_t code;
-
-	i = 0;
-
-	while (src[i] != '\0' && i < (dest_len - 1)) {
-		code = src[i];
-		if (code < 128)
-			dest[i] = char(code);
-		else {
-			dest[i] = '?';
-			if (code >= 0xD800 && code <= 0xD8FF)
-				// lead surrogate, skip the next code unit, which is the trail
-				i++;
-		}
-		i++;
-	}
-
-	dest[i] = '\0';
-
-	return i - 1;
-
-}
-
 int wmain(int argc, wchar_t** argv)
 {
 	// Get PID
@@ -102,7 +77,7 @@ int wmain(int argc, wchar_t** argv)
 		max, &bytesIo, nullptr))
 	{
 		CHAR dumpPath[MAX_PATH];
-		to_narrow(argv[1], dumpPath, MAX_PATH);
+		sprintf_s(dumpPath, MAX_PATH, "%ls", argv[1]);
 		strcat_s(dumpPath, MAX_PATH, ".bin");
 
 		FILE* fp;
