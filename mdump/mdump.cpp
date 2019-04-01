@@ -72,75 +72,76 @@ int wmain(int argc, wchar_t** argv)
 		return 0;
 	}
 
-	// Set up vars for communication
-	DWORD bytesIo = 0;
-	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
-	auto result = new BYTE[max];
-
-	LGGETMEMORYREGION_REQ request = {
-		pid
-	};
-
-	// Try to connect to the driver
 	const auto hDev = CreateFile(LEGDWM_USERMODE_PATH, GENERIC_ALL, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_SYSTEM,
 		nullptr);
 
 	// Exit if we couldn't connect to the driver
 	if (hDev == INVALID_HANDLE_VALUE)
 	{
-		wcout << L"Could not open driver" << std::endl;
+		std::wcout << L"Could not open driver" << std::endl;
 		return 0;
 	}
 
+	DWORD bytesIo = 0;
+	DWORD dw = 0;
 
-	CHAR sz[MAX_PATH];
-	to_narrow(argv[1], sz, MAX_PATH);
-	strcat_s(sz, MAX_PATH, ".bin");
-	FILE* fp;
-	fopen_s(&fp, sz, "wb+");
-	
+	// This the maximum amount of results we can store
+	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
+	// the driver will complain about possibly not having enough memory to
+	// copy the results
+	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(LGMEMORY_REGION);
+	auto result = new BYTE[max];
+
+	// This is the request we are going to pass to our driver
+	LGGETMEMORYREGION_REQ request = {
+		pid
+	};
 
 	// Talk to the driver
 	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), result,
 		max, &bytesIo, nullptr))
 	{
+		CHAR dumpPath[MAX_PATH];
+		to_narrow(argv[1], dumpPath, MAX_PATH);
+		strcat_s(dumpPath, MAX_PATH, ".bin");
+
+		FILE* fp;
+		fopen_s(&fp, dumpPath, "wb+");
+
 		BYTE* copy;
 		bytesIo -= sizeof(request);
-		wcout << L"OK " << "IO = " << bytesIo << endl;
-		wcout << "mbi * " << bytesIo / sizeof(MEMORY_BASIC_INFORMATION) << endl;
-
-		MEMORY_BASIC_INFORMATION mbi;
+		LGMEMORY_REGION reg;
 		int index = 0;
 		while (bytesIo > 0)
 		{
-			memcpy(&mbi, result + index * sizeof(mbi), sizeof(mbi));
+			memcpy(&reg, result + index * sizeof(reg), sizeof(reg));
 			index++;
-			bytesIo -= sizeof(mbi);
+			bytesIo -= sizeof(reg);
 
-			copy = new BYTE[mbi.RegionSize];
+			if (reg.mbi.Type == MEM_IMAGE)
+				continue;
 
+			copy = new BYTE[reg.mbi.RegionSize];
 
-			LGCOPYMEMORY_REQ cpyreq = {
-		FALSE,						// specifies that we are READING from the memory
-		pid,						// target process ID
-		mbi.BaseAddress,			// target memory address
-		copy,						// copy bytes begining from this address
-		mbi.RegionSize		// the count of the bytes we will write
+			LGCOPYMEMORY_REQ cpyreq
+			{
+				FALSE,
+				pid,
+				reg.mbi.BaseAddress,
+				copy,
+				reg.mbi.RegionSize
 			};
 
 			if (DeviceIoControl(hDev, IOCTL_LGCOPYMEMORY, &cpyreq, sizeof(cpyreq), nullptr,
-				0, &bytesIo, nullptr))
+				0, &dw, nullptr))
 			{
-				//wcout << L"Region written!" << endl;
-				fwrite(copy, 1, mbi.RegionSize, fp);
+				wcout << L"Copied " << reg.mbi.RegionSize << L" bytes from " << reg.mbi.BaseAddress << endl;
+				fwrite(copy, 1, reg.mbi.RegionSize, fp);
 			}
 
 			delete[] copy;
 		}
-
-		//DeviceIoControl(hDev, IOCTL_LGCOPYMEMORY, )
-
-		wcout << "Base address = " << mbi.BaseAddress << " RegionSize = " << mbi.RegionSize << endl;
+		fclose(fp);
 	}
 	else
 	{
@@ -149,5 +150,4 @@ int wmain(int argc, wchar_t** argv)
 	}
 
 	delete[] result;
-	fclose(fp);
 }
