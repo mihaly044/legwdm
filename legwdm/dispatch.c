@@ -53,6 +53,10 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		{
 			status = STATUS_INVALID_PARAMETER;
 		}
+		else
+		{
+			status = LgCopyMemory(pParam);
+		}
 		
 		processedIo = sizeof(PLGCOPYMEMORY_REQ);
 		break;
