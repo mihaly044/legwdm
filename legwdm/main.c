@@ -11,7 +11,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 	UNREFERENCED_PARAMETER(RegistryPath);
 
 	RtlInitUnicodeString(&g_DevName, LEGWDM_FILE_DEVICE);
-	RtlInitUnicodeString(&g_SymLink, LEGDWM_SYMLINK_DEEVICE);
+	RtlInitUnicodeString(&g_SymLink, LEGDWM_SYMLINK_DEVICE);
 
 	NTSTATUS status = IoCreateDevice(DriverObject, 0, &g_DevName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE,
 		&g_DeviceObject);
