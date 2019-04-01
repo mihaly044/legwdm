@@ -99,6 +99,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		break;
 
 	case IOCTL_LGQUERYMEMIMAGENAME:
+		//DbgPrintEx causes PAGE_FAULT if called heavily. Have no idea why. Probably it eats up the stack?
 		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
 		Irp->AssociatedIrp.SystemBuffer;
 		
