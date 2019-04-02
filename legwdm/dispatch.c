@@ -149,7 +149,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 	default:
 		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d Invalid control code: 0x%08x\r\n", __FILE__, __LINE__, 
 		//	IoStackLocation->Parameters.DeviceIoControl.IoControlCode);
-		status = STATUS_INVALID_PARAMETER;
+		status = STATUS_INVALID_DEVICE_REQUEST;
 		break;
 	}
 
