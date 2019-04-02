@@ -137,57 +137,23 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 	wcout << __FUNCTIONW__ << "():" << endl;
 
 	DWORD bytesIo = 0;
+	DWORD cbMbi = 0;
 
-	DWORD dwImIo = 0;
-	WCHAR* im;
+	MEMORY_BASIC_INFORMATION mbi[MAX_LGMEMORY_REGIONS];
 
-	// This the maximum amount of results we can store
-	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
-	// the driver will complain about possibly not having enough memory to
-	// copy the results
-	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
-	auto result = new BYTE[max];
-
-	// This is the request we are going to pass to our driver
-	LGGETMEMORYREGION_REQ request = {
-		pid
-	};
+	LGGETMEMORYREGION_REQ request;
+	request.dwCpId = GetCurrentProcessId();
+	request.dwPid = pid;
+	request.pcbMbi = &cbMbi;
+	request.pMbi = mbi;
 
 	// Talk to the driver
-	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), result,
-		max, &bytesIo, nullptr))
+	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), nullptr,
+		0, &bytesIo, nullptr))
 	{
-		bytesIo -= sizeof(request);
-
-		MEMORY_BASIC_INFORMATION mbi;
-		int index = 0;
-		while (bytesIo > 0)
+		for (DWORD i = 0; i < cbMbi; i++)
 		{
-			memcpy(&mbi, result + index * sizeof(mbi), sizeof(mbi));
-			index++;
-
-			if (mbi.Type == MEM_IMAGE)
-			{
-				im = new WCHAR[1024];
-
-				LGQUERYMEMIMAGENAME_REQ qreq = {
-					pid,
-					mbi.BaseAddress
-				};
-
-				DeviceIoControl(hDev, IOCTL_LGQUERYMEMIMAGENAME, &qreq, sizeof(qreq), im,
-					1024 * sizeof(WCHAR) + 1, &dwImIo, nullptr);
-
-				wcout << L"Base=" <<mbi.BaseAddress << L" Size=" << mbi.RegionSize << " Image=" << im << endl;
-
-				delete[] im;
-			}
-			else
-			{
-				wcout << L"Base=" << mbi.BaseAddress << L" Size=" << mbi.RegionSize << endl;
-			}
-
-			bytesIo -= sizeof(mbi);
+			wcout << L"Base " << mbi[i].BaseAddress << " Size " << mbi[i].RegionSize << endl;
 		}
 	}
 	else
@@ -195,8 +161,6 @@ void test_enum_regions(HANDLE hDev, DWORD pid)
 		DWORD error = GetLastError();
 		wcout << L"Error code " << "0x" << hex << error << endl;
 	}
-
-	delete[] result;
 }
 
 int wmain(int argc, wchar_t** argv)

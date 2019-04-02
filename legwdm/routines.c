@@ -8,29 +8,29 @@ NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 	PEPROCESS pProcess = NULL, pSourceProc = NULL, pTargetProc = NULL;
 	PVOID pSource = NULL, pTarget = NULL;
 
-	status = PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess);
+	status = PsLookupProcessByProcessId((HANDLE)pParam->dwPid, &pProcess);
 	if (NT_SUCCESS(status))
 	{
 		SIZE_T bytes = 0;
 
 		// Write
-		if (pParam->write != FALSE)
+		if (pParam->bWrite != FALSE)
 		{
 			pSourceProc = PsGetCurrentProcess();
 			pTargetProc = pProcess;
-			pSource = (PVOID)pParam->data;
-			pTarget = (PVOID)pParam->addr;
+			pSource = (PVOID)pParam->pData;
+			pTarget = (PVOID)pParam->pAddr;
 		}
 		// Read
 		else
 		{
 			pSourceProc = pProcess;
 			pTargetProc = PsGetCurrentProcess();
-			pSource = (PVOID)pParam->addr;
-			pTarget = (PVOID)pParam->data;
+			pSource = (PVOID)pParam->pAddr;
+			pTarget = (PVOID)pParam->pData;
 		}
 
-		status = MmCopyVirtualMemory(pSourceProc, pSource, pTargetProc, pTarget, pParam->size, KernelMode, &bytes);
+		status = MmCopyVirtualMemory(pSourceProc, pSource, pTargetProc, pTarget, pParam->dwSize, KernelMode, &bytes);
 	}
 	else
 		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
@@ -41,81 +41,107 @@ NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 	return status;
 }
 
-NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PSIZE_T count)
+NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam)
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status;				// NT status of the routine
+	ULONG_PTR base;					// user-space memory address to query for
+	DWORD count;					// count of results
+	SIZE_T cbIo;					// number of bytes copied via MmCopyVirtualMemory
+	PEPROCESS pProcess;				// target process
+	PEPROCESS pCalleeProcess;		// callee user process
+	HANDLE hProcess;				// apc state of pProcess
+	KAPC_STATE apc;					// apc of pProcess
+	MEMORY_BASIC_INFORMATION mbi;	// temporary var to copy to user space
+	PCHAR buf;						// buffer for temp data
 
-	ULONG_PTR base = 0;
-	SIZE_T retsize = 0;
-
-	MEMORY_BASIC_INFORMATION mbi;
-	PEPROCESS pProcess;
-	HANDLE hProcess;
-	KAPC_STATE apc;
+	// Init varialbes
 	base = (ULONG_PTR)MM_LOWEST_USER_ADDRESS;
+	count = 0;
 
-	status = PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess);
+	// Allocate memory for temp buffer
+	buf = ExAllocatePool(PagedPool, MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION));
+
+	// Return if memory allocation has failed
+	if (buf == NULL)
+	{
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	// Return if the callee process id is invalid
+	status = PsLookupProcessByProcessId((HANDLE)pParam->dwCpId, &pCalleeProcess);
 	if (!NT_SUCCESS(status))
 	{
-		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+		return status;
 	}
-	else
+
+	// Return if the target process id is invalid
+	status = PsLookupProcessByProcessId((HANDLE)pParam->dwPid, &pProcess);
+	if (!NT_SUCCESS(status))
 	{
-		KeStackAttachProcess(pProcess, &apc);
-		hProcess = ZwCurrentProcess();
+		return status;
+	}
 
-		while (base < (ULONG_PTR)MM_HIGHEST_USER_ADDRESS - PAGE_SIZE - 1)
+	// Attach process to the stack, set current process variable
+	KeStackAttachProcess(pProcess, &apc);
+	hProcess = ZwCurrentProcess();
+
+	// Loop through memregion MM_LOWEST_USER_ADDRESS to MM_HIGHEST_USER_ADDRESS
+	while (base < (ULONG_PTR)MM_HIGHEST_USER_ADDRESS - PAGE_SIZE - 1)
+	{
+		// Attempt to retrieve information about the curreent block at base address
+		status = ZwQueryVirtualMemory(hProcess, (PULONG_PTR)base, MemoryBasicInformation, &mbi, sizeof(MEMORY_BASIC_INFORMATION), NULL);
+		if (NT_SUCCESS(status))
 		{
-			status = ZwQueryVirtualMemory(hProcess, (PULONG_PTR)base, MemoryBasicInformation, &mbi, sizeof(MEMORY_BASIC_INFORMATION), &retsize);
-
-			if (NT_SUCCESS(status))
+			// Skip re-allocated memory
+			if ((ULONG_PTR)mbi.AllocationBase != base)
 			{
-				if (/*mbi.Type != 0x1000000 ||*/ (ULONG_PTR)mbi.AllocationBase != base)
-				{
-					if (mbi.RegionSize > 0)
-						LgAdjustMemoryPointerByOffset(&base, mbi.RegionSize);
-					else
-						LgAdjustMemoryPointerByOffset(&base, PAGE_SIZE);
-
-					continue;
-				}
-			}
-			else
-			{
-				//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
-				goto Detach;
-			}
-
-			if (NT_SUCCESS(status))
-			{
-				if (*count > MAX_LGMEMORY_REGIONS)
-				{
-					*count = *count - 1;
-					goto Detach;
-				}
-
-				RtlCopyMemory((PVOID)( (ULONG_PTR)buffer + (ULONG_PTR)(*count) * sizeof(MEMORY_BASIC_INFORMATION)) , &mbi, sizeof(MEMORY_BASIC_INFORMATION));
-				(*count) = (*count) + 1;
-
+				// Advance base pointers
 				if (mbi.RegionSize > 0)
 					LgAdjustMemoryPointerByOffset(&base, mbi.RegionSize);
 				else
 					LgAdjustMemoryPointerByOffset(&base, PAGE_SIZE);
+
+				continue;
 			}
-			else
+
+			// We have ran out of our result buffer size. Truncate the output
+			if (count > MAX_LGMEMORY_REGIONS)
 			{
-				//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+				count--;
 				goto Detach;
 			}
-		}
 
-		Detach:
-		KeUnstackDetachProcess(&apc);
+			// Copy current MBI to temp buffer
+			RtlCopyMemory((PVOID)((ULONG_PTR)buf + (ULONG_PTR)count * sizeof(MEMORY_BASIC_INFORMATION)), &mbi, sizeof(mbi));
+			count++;
+
+			// Advance the base pointer so that it will point to the next
+			// memory region
+			if (mbi.RegionSize > 0)
+				LgAdjustMemoryPointerByOffset(&base, mbi.RegionSize);
+			else
+				LgAdjustMemoryPointerByOffset(&base, PAGE_SIZE);
+		}
+		else
+		{
+			goto Detach;
+		}
 	}
 
+	// Copy results to user space
+	MmCopyVirtualMemory(pProcess, buf, pCalleeProcess, pParam->pMbi, sizeof(MEMORY_BASIC_INFORMATION) * count, KernelMode, &cbIo);
+	MmCopyVirtualMemory(pProcess, &count, pCalleeProcess, pParam->pcbMbi, sizeof(DWORD), KernelMode, &cbIo);
+
+	// Cleanup
+	Detach:
+	KeUnstackDetachProcess(&apc);
 	if (pProcess)
 		ObDereferenceObject(pProcess);
+	
+	if (pCalleeProcess)
+		ObDereferenceObject(pProcess);
 
+	ExFreePool(buf);
 	return status;
 }
 

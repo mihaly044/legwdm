@@ -6,21 +6,23 @@
 #define MAX_PATH 260
 #endif
 
-#define MAX_LGMEMORY_REGIONS 512
+#define MAX_LGMEMORY_REGIONS 2048
 
 typedef struct _class_LGCOPYMEMORY_REQ
 {
-	BOOLEAN write;
-	DWORD pid;
-	PVOID addr;
-	PVOID data;
-	DWORD size;
+	BOOLEAN bWrite;
+	DWORD dwPid;
+	PVOID pAddr;
+	PVOID pData;
+	DWORD dwSize;
 } LGCOPYMEMORY_REQ, *PLGCOPYMEMORY_REQ;
 
 typedef struct _class_LGGETMEMORYREGION_REQ
 {
-	DWORD pid;
-	MEMORY_BASIC_INFORMATION mbi[MAX_LGMEMORY_REGIONS];
+	DWORD dwCpId;
+	DWORD dwPid;
+	PVOID pMbi;
+	PVOID pcbMbi;
 } LGGETMEMORYREGION_REQ, *PLGGETMEMORYREGION_REQ;
 
 typedef struct _class_LGQUERYMEMIMAGENAME_REQ
