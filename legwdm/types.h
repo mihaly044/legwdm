@@ -2,6 +2,7 @@
 #if !defined(_CONSOLE) && !defined USERMODE
 #include <ntdef.h>
 #include <ntifs.h>
+#include <minwindef.h>
 #define MAX_PATH 260
 #endif
 
@@ -10,20 +11,21 @@
 typedef struct _class_LGCOPYMEMORY_REQ
 {
 	BOOLEAN write;
-	unsigned long pid;
+	DWORD pid;
 	PVOID addr;
 	PVOID data;
-	unsigned long size;
+	DWORD size;
 } LGCOPYMEMORY_REQ, *PLGCOPYMEMORY_REQ;
 
 typedef struct _class_LGGETMEMORYREGION_REQ
 {
-	unsigned long pid;
+	DWORD pid;
+	MEMORY_BASIC_INFORMATION mbi[MAX_LGMEMORY_REGIONS];
 } LGGETMEMORYREGION_REQ, *PLGGETMEMORYREGION_REQ;
 
 typedef struct _class_LGQUERYMEMIMAGENAME_REQ
 {
-	unsigned long pid;
+	DWORD pid;
 	PVOID base;
 } LGQUERYMEMIMAGENAME_REQ, *PLGQUERYMEMIMAGENAME_REQ;
 
