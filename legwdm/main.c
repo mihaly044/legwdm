@@ -18,14 +18,14 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 
 	if (!NT_SUCCESS(status))
 	{
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Failed to create device\r\n");
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Failed to create device\r\n");
 		return status;
 	}
 
 	status = IoCreateSymbolicLink(&g_SymLink, &g_DevName);
 	if (!NT_SUCCESS(status))
 	{
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Failed to create symlink\r\n");
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Failed to create symlink\r\n");
 		return status;
 	}
 
@@ -37,7 +37,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DispatchDeviceControl;
 	DriverObject->DriverUnload = DriverUnload;
 
-	DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Load successfull\r\n");
+	//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Load successfull\r\n");
 	return status;
 }
 
@@ -47,5 +47,5 @@ VOID DriverUnload(IN PDRIVER_OBJECT DriverObject)
 
 	IoDeleteSymbolicLink(&g_SymLink);
 	IoDeleteDevice(g_DeviceObject);
-	DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Unloaded driver\r\n");
+	//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Unloaded driver\r\n");
 }

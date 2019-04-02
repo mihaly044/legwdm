@@ -33,7 +33,7 @@ NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 		status = MmCopyVirtualMemory(pSourceProc, pSource, pTargetProc, pTarget, pParam->size, KernelMode, &bytes);
 	}
 	else
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 
 	if (pProcess)
 		ObDereferenceObject(pProcess);
@@ -57,7 +57,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PSIZ
 	status = PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess);
 	if (!NT_SUCCESS(status))
 	{
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 	}
 	else
 	{
@@ -82,7 +82,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PSIZ
 			}
 			else
 			{
-				DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+				//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 				goto Detach;
 			}
 
@@ -104,7 +104,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam, PVOID buffer, PSIZ
 			}
 			else
 			{
-				DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+				//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 				goto Detach;
 			}
 		}
@@ -129,7 +129,7 @@ NTSTATUS LgQueryMemImageName(IN PLGQUERYMEMIMAGENAME_REQ pParam, PVOID buffer, P
 	status = PsLookupProcessByProcessId((HANDLE)pParam->pid, &pProcess);
 	if (!NT_SUCCESS(status))
 	{
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 	}
 	else
 	{
@@ -145,7 +145,7 @@ NTSTATUS LgQueryMemImageName(IN PLGQUERYMEMIMAGENAME_REQ pParam, PVOID buffer, P
 		}
 		else
 		{
-			DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
+			//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: ZwQueryVirtualMemory failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 		}
 
 		KeUnstackDetachProcess(&apc);

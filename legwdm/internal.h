@@ -2,7 +2,7 @@
 #include "types.h"
 #include "imports.h"
 
-#define PAGE_SIZE 0x1000
+//#define PAGE_SIZE 0x1000
 
 // Pool tags should be not more than 4 chars
 // @seealso https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/wdm/nf-wdm-exallocatepoolwithtag

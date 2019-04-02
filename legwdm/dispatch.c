@@ -13,16 +13,16 @@ NTSTATUS DispatchMajorFunction(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	switch (IoStackLocation->MajorFunction)
 	{
 	case IRP_MJ_CREATE:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_CREATE called\r\n");
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_CREATE called\r\n");
 		break;
 	case IRP_MJ_CLOSE:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_CLOSE called\r\n");
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_CLOSE called\r\n");
 		break;
 	case IRP_MJ_READ:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_READ called\r\n");
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_READ called\r\n");
 		break;
 	case IRP_MJ_WRITE:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_WRITE called\r\n");
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IRP_MJ_WRITE called\r\n");
 		break;
 	default:
 		status = STATUS_INVALID_PARAMETER;
@@ -46,7 +46,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 	switch (IoStackLocation->Parameters.DeviceIoControl.IoControlCode)
 	{
 	case IOCTL_LGCOPYMEMORY:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGCOPYMEMORY was called\r\n", __FILE__, __LINE__);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGCOPYMEMORY was called\r\n", __FILE__, __LINE__);
 		
 		PLGCOPYMEMORY_REQ pParam = (PLGCOPYMEMORY_REQ)Irp->AssociatedIrp.SystemBuffer;
 		if (!pParam || pParam->pid == 0)
@@ -62,7 +62,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		break;
 
 	case IOCTL_LGENUMMEMORYREGIONS:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGENUMMEMORYREGIONS was called\r\n", __FILE__, __LINE__);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGENUMMEMORYREGIONS was called\r\n", __FILE__, __LINE__);
 		PLGGETMEMORYREGION_REQ pParam1 = (PLGGETMEMORYREGION_REQ)Irp->AssociatedIrp.SystemBuffer;
 
 		if (!pParam1 || pParam1->pid == 0)
@@ -108,8 +108,8 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		break;
 
 	case IOCTL_LGQUERYMEMIMAGENAME:
-		//DbgPrintEx causes PAGE_FAULT if called heavily. Have no idea why. Probably it eats up the stack?
-		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
+		////DbgPrintEx causes PAGE_FAULT if called heavily. Have no idea why. Probably it eats up the stack?
+		////DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
 		Irp->AssociatedIrp.SystemBuffer;
 		PLGQUERYMEMIMAGENAME_REQ pParam2 = (PLGQUERYMEMIMAGENAME_REQ)Irp->AssociatedIrp.SystemBuffer;
 
@@ -147,8 +147,8 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		}
 		break;
 	default:
-		DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d Invalid control code: 0x%08x\r\n", __FILE__, __LINE__, 
-			IoStackLocation->Parameters.DeviceIoControl.IoControlCode);
+		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d Invalid control code: 0x%08x\r\n", __FILE__, __LINE__, 
+		//	IoStackLocation->Parameters.DeviceIoControl.IoControlCode);
 		status = STATUS_INVALID_PARAMETER;
 		break;
 	}
