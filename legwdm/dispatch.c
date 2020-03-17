@@ -42,13 +42,15 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 	PIO_STACK_LOCATION IoStackLocation = IoGetCurrentIrpStackLocation(Irp);
 	NTSTATUS status = STATUS_SUCCESS;
 	ULONG processedIo = 0;
+	PLGCOPYMEMORY_REQ pParam;
+	PLGGETMEMORYREGION_REQ pParam1;
 
 	switch (IoStackLocation->Parameters.DeviceIoControl.IoControlCode)
 	{
 	case IOCTL_LGCOPYMEMORY:
 		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGCOPYMEMORY was called\r\n", __FILE__, __LINE__);
 		
-		PLGCOPYMEMORY_REQ pParam = (PLGCOPYMEMORY_REQ)Irp->AssociatedIrp.SystemBuffer;
+		pParam = (PLGCOPYMEMORY_REQ)Irp->AssociatedIrp.SystemBuffer;
 		if (!pParam || pParam->dwPid == 0)
 		{
 			status = STATUS_INVALID_PARAMETER;
@@ -62,7 +64,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		break;
 
 	case IOCTL_LGENUMMEMORYREGIONS:
-		PLGGETMEMORYREGION_REQ pParam1 = (PLGGETMEMORYREGION_REQ)Irp->AssociatedIrp.SystemBuffer;
+		pParam1 = (PLGGETMEMORYREGION_REQ)Irp->AssociatedIrp.SystemBuffer;
 		
 		if (!pParam1 || pParam1->dwCpId == 0 || pParam1->dwPid == 0 || pParam1->pcbMbi == NULL || pParam1->pMbi == NULL)
 		{
