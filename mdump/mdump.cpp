@@ -57,65 +57,59 @@ int wmain(int argc, wchar_t** argv)
 		return 0;
 	}
 
+
+	FILE* fp = NULL;
 	DWORD bytesIo = 0;
-	DWORD dw = 0;
+	DWORD bytesIo2 = 0;
+	DWORD cbMbi = 0;
+	BYTE* copy = NULL;
+	MEMORY_BASIC_INFORMATION mbi[MAX_LGMEMORY_REGIONS];
+	LGGETMEMORYREGION_REQ request;
 
-	// This the maximum amount of results we can store
-	// if it's anything else than MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
-	// the driver will complain about possibly not having enough memory to
-	// copy the results
-	DWORD max = MAX_LGMEMORY_REGIONS * sizeof(MEMORY_BASIC_INFORMATION);
-	auto result = new BYTE[max];
-
-	// This is the request we are going to pass to our driver
-	LGGETMEMORYREGION_REQ request = {
-		pid
-	};
+	request.dwCpId = GetCurrentProcessId();
+	request.dwPid = pid;
+	request.pcbMbi = &cbMbi;
+	request.pMbi = mbi;
 
 	// Talk to the driver
-	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), result,
-		max, &bytesIo, nullptr))
+	if (DeviceIoControl(hDev, IOCTL_LGENUMMEMORYREGIONS, &request, sizeof(request), nullptr,
+		0, &bytesIo, nullptr))
 	{
 		CHAR dumpPath[MAX_PATH];
 		sprintf_s(dumpPath, MAX_PATH, "%ls", argv[1]);
 		strcat_s(dumpPath, MAX_PATH, ".bin");
-
-		FILE* fp;
 		fopen_s(&fp, dumpPath, "wb+");
 
-		BYTE* copy;
-		bytesIo -= sizeof(request);
-		MEMORY_BASIC_INFORMATION mbi;
-		int index = 0;
-		while (bytesIo > 0)
+		for (DWORD i = 0; i < cbMbi; i++)
 		{
-			memcpy(&mbi, result + index * sizeof(mbi), sizeof(mbi));
-			index++;
-			bytesIo -= sizeof(mbi);
-
-			if (mbi.Type == MEM_IMAGE)
+			if (mbi[i].Type == MEM_IMAGE)
 				continue;
 
-			copy = new BYTE[mbi.RegionSize];
-
+			copy = new BYTE[mbi[i].RegionSize];
 			LGCOPYMEMORY_REQ cpyreq
 			{
 				FALSE,
 				pid,
-				mbi.BaseAddress,
+				mbi[i].BaseAddress,
 				copy,
-				mbi.RegionSize
+				mbi[i].RegionSize
 			};
 
 			if (DeviceIoControl(hDev, IOCTL_LGCOPYMEMORY, &cpyreq, sizeof(cpyreq), nullptr,
-				0, &dw, nullptr))
+				0, &bytesIo2, nullptr))
 			{
-				wcout << L"Copied " << mbi.RegionSize << L" bytes from " << mbi.BaseAddress << endl;
-				fwrite(copy, 1, mbi.RegionSize, fp);
+				wcout << L"Copied " << mbi[i].RegionSize << L" bytes from " << mbi[i].BaseAddress << endl;
+				fwrite(copy, 1, mbi[i].RegionSize, fp);
+			}
+			else
+			{
+				DWORD error = GetLastError();
+				wcout << L"Error code " << "0x" << hex << error << endl;
 			}
 
 			delete[] copy;
 		}
+
 		fclose(fp);
 	}
 	else
@@ -123,6 +117,4 @@ int wmain(int argc, wchar_t** argv)
 		DWORD error = GetLastError();
 		wcout << L"Error code " << "0x" << hex << error << endl;
 	}
-
-	delete[] result;
 }

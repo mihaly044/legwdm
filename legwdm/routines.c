@@ -8,6 +8,12 @@ NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 	PEPROCESS pProcess = NULL, pSourceProc = NULL, pTargetProc = NULL;
 	PVOID pSource = NULL, pTarget = NULL;
 
+	// Deny access to non-user space
+	if (pParam->pAddr >= (ULONGLONG)MM_HIGHEST_USER_ADDRESS || (ULONGLONG)(pParam->pAddr) + pParam->dwSize > (ULONGLONG)MM_HIGHEST_USER_ADDRESS)
+	{
+		return STATUS_INVALID_ADDRESS;
+	}
+
 	status = PsLookupProcessByProcessId((HANDLE)pParam->dwPid, &pProcess);
 	if (NT_SUCCESS(status))
 	{
