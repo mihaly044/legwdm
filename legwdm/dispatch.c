@@ -44,6 +44,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 	ULONG processedIo = 0;
 	PLGCOPYMEMORY_REQ pParam;
 	PLGGETMEMORYREGION_REQ pParam1;
+	PLGQUERYMEMIMAGENAME_REQ pParam2;
 
 	switch (IoStackLocation->Parameters.DeviceIoControl.IoControlCode)
 	{
@@ -82,7 +83,7 @@ NTSTATUS DispatchDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 		////DbgPrintEx causes PAGE_FAULT if called heavily. Have no idea why. Probably it eats up the stack?
 		////DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d IOCTL_LGQUERYMEMIMAGENAME was called\r\n", __FILE__, __LINE__);
 		Irp->AssociatedIrp.SystemBuffer;
-		PLGQUERYMEMIMAGENAME_REQ pParam2 = (PLGQUERYMEMIMAGENAME_REQ)Irp->AssociatedIrp.SystemBuffer;
+		pParam2 = (PLGQUERYMEMIMAGENAME_REQ)Irp->AssociatedIrp.SystemBuffer;
 
 		if (!pParam2 || pParam2->pid == 0)
 		{
