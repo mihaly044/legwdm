@@ -145,7 +145,7 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam)
 		ObDereferenceObject(pProcess);
 	
 	if (pCalleeProcess)
-		ObDereferenceObject(pProcess);
+		ObDereferenceObject(pCalleeProcess);
 
 	ExFreePool(buf);
 	return status;
