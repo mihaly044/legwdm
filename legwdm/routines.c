@@ -15,31 +15,34 @@ NTSTATUS LgCopyMemory(IN PLGCOPYMEMORY_REQ pParam)
 	}
 
 	status = PsLookupProcessByProcessId((HANDLE)pParam->dwPid, &pProcess);
+	SIZE_T bytes = 0;
+
+	// Write
+	if (pParam->bWrite != FALSE)
+	{
+		pSourceProc = PsGetCurrentProcess();
+		pTargetProc = pProcess;
+		pSource = (PVOID)pParam->pData;
+		pTarget = (PVOID)pParam->pAddr;
+	}
+	// Read
+	else
+	{
+		pSourceProc = pProcess;
+		pTargetProc = PsGetCurrentProcess();
+		pSource = (PVOID)pParam->pAddr;
+		pTarget = (PVOID)pParam->pData;
+	}
+
 	if (NT_SUCCESS(status))
 	{
-		SIZE_T bytes = 0;
-
-		// Write
-		if (pParam->bWrite != FALSE)
-		{
-			pSourceProc = PsGetCurrentProcess();
-			pTargetProc = pProcess;
-			pSource = (PVOID)pParam->pData;
-			pTarget = (PVOID)pParam->pAddr;
+		__try {
+			status = MmCopyVirtualMemory(pSourceProc, pSource, pTargetProc, pTarget, pParam->dwSize, KernelMode, &bytes);
 		}
-		// Read
-		else
-		{
-			pSourceProc = pProcess;
-			pTargetProc = PsGetCurrentProcess();
-			pSource = (PVOID)pParam->pAddr;
-			pTarget = (PVOID)pParam->pData;
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			status = STATUS_ACCESS_VIOLATION;
 		}
-
-		status = MmCopyVirtualMemory(pSourceProc, pSource, pTargetProc, pTarget, pParam->dwSize, KernelMode, &bytes);
 	}
-	else
-		//DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s %s: PsLookupProcessByProcessId failed with status 0x%X\n", __FILE__, __FUNCTION__, status);
 
 	if (pProcess)
 		ObDereferenceObject(pProcess);
