@@ -138,8 +138,17 @@ NTSTATUS LgGetMemoryRegions(IN PLGGETMEMORYREGION_REQ pParam)
 	}
 
 	// Copy results to user space
-	MmCopyVirtualMemory(pProcess, buf, pCalleeProcess, pParam->pMbi, sizeof(MEMORY_BASIC_INFORMATION) * count, KernelMode, &cbIo);
-	MmCopyVirtualMemory(pProcess, &count, pCalleeProcess, pParam->pcbMbi, sizeof(DWORD), KernelMode, &cbIo);
+	// TODO: Use direct I/O instead of copying with MmCopyVirtualMemory
+	do {
+		__try {
+			MmCopyVirtualMemory(pProcess, buf, pCalleeProcess, pParam->pMbi, sizeof(MEMORY_BASIC_INFORMATION) * count, KernelMode, &cbIo);
+			MmCopyVirtualMemory(pProcess, &count, pCalleeProcess, pParam->pcbMbi, sizeof(DWORD), KernelMode, &cbIo);
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			status = STATUS_ACCESS_VIOLATION;
+			break;
+		}
+	} while (FALSE);
 
 	// Cleanup
 	Detach:
